@@ -52,6 +52,19 @@ var (
 	insecure           = flag.Bool("insecure", strings.ToLower(os.Getenv("GITHUB_INSECURE")) == "true", "Ignore SSL certificate check")
 )
 
+func envToMap() (map[string]string, error) {
+	envMap := make(map[string]string)
+	var err error
+
+	for _, v := range os.Environ() {
+		key := strings.Split(v, "=")[0]
+		// call Getenv again because variable might contain more than one '='
+		envMap[key] = os.Getenv(key)
+	}
+
+	return envMap, err
+}
+
 func getPullRequestOrIssueNumber(str string) (int, error) {
 	if str == "" {
 		return 0, errors.New("-number or GITHUB_PR_ISSUE_NUMBER required")
@@ -130,7 +143,8 @@ func formatComment(comment string) (string, error) {
 
 	var doc bytes.Buffer
 
-	err = t.Execute(&doc, comment)
+	envMap, _ := envToMap()
+	err = t.Execute(&doc, envMap)
 	if err != nil {
 		return "", err
 	}
